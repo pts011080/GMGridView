@@ -300,6 +300,7 @@
 		16924B29144156FE00E6E556 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ENABLE_BITCODE = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "GMGridView-Prefix.pch";
 				INFOPLIST_FILE = "GMGridView-Info.plist";

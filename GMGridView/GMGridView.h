@@ -129,6 +129,8 @@ typedef enum
 @optional
 // Allow a cell to be deletable. If not implemented, YES is assumed.
 - (BOOL)GMGridView:(GMGridView *)gridView canDeleteItemAtIndex:(NSInteger)index;
+//custom accessory view.
+- (UIView *)accessoryviewViewForGMGridView:(GMGridView *)gridView;
 
 @end
 
@@ -150,6 +152,8 @@ typedef enum
 - (void)GMGridView:(GMGridView *)gridView processDeleteActionForItemAtIndex:(NSInteger)index;
 
 - (void)GMGridView:(GMGridView *)gridView changedEdit:(BOOL)edit;
+
+- (void)accessoryViewDidActivedForGMGridView:(GMGridView *)gridView;
 
 @end
 

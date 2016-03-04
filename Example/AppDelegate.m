@@ -22,7 +22,7 @@
     UITabBarController *tabBarController = [[UITabBarController alloc] init];
     [tabBarController setViewControllers:[NSArray arrayWithObjects: 
                                           [[UINavigationController alloc] initWithRootViewController:[[Demo1ViewController alloc] init]],
-                                          [[UINavigationController alloc] initWithRootViewController:[[Demo2ViewController alloc] init]],
+                                          /*[[UINavigationController alloc] initWithRootViewController:[[Demo2ViewController alloc] init]],*/
                                           nil]];
     
     self.window.rootViewController = tabBarController;

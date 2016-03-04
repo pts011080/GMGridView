@@ -11,7 +11,7 @@
 #import "GMGridView.h"
 #import "OptionsViewController.h"
 
-#define NUMBER_ITEMS_ON_LOAD 250
+#define NUMBER_ITEMS_ON_LOAD 0
 #define NUMBER_ITEMS_ON_LOAD2 30
 
 //////////////////////////////////////////////////////////////
@@ -122,7 +122,7 @@
     _gmGridView.style = GMGridViewStyleSwap;
     _gmGridView.itemSpacing = spacing;
     _gmGridView.minEdgeInsets = UIEdgeInsetsMake(spacing, spacing, spacing, spacing);
-    _gmGridView.centerGrid = YES;
+    _gmGridView.centerGrid = NO;
     _gmGridView.actionDelegate = self;
     _gmGridView.sortingDelegate = self;
     _gmGridView.transformDelegate = self;
@@ -209,6 +209,8 @@
 
 - (CGSize)GMGridView:(GMGridView *)gridView sizeForItemsInInterfaceOrientation:(UIInterfaceOrientation)orientation
 {
+    return CGSizeMake(100, 100);
+    
     if (INTERFACE_IS_PHONE) 
     {
         if (UIInterfaceOrientationIsLandscape(orientation)) 
@@ -239,11 +241,12 @@
     
     CGSize size = [self GMGridView:gridView sizeForItemsInInterfaceOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
     
-    GMGridViewCell *cell = [gridView dequeueReusableCell];
+    GMGridViewCell *cell = [gridView dequeueReusableCellWithIdentifier:@"cell"];
     
     if (!cell) 
     {
-        cell = [[GMGridViewCell alloc] init];
+        cell = [[GMGridViewCell alloc] initWithIdentifier:@"cell"];
+        cell.reuseIdentifier = @"cell";
         cell.deleteButtonIcon = [UIImage imageNamed:@"close_x.png"];
         cell.deleteButtonOffset = CGPointMake(-15, -15);
         
@@ -274,6 +277,13 @@
 - (BOOL)GMGridView:(GMGridView *)gridView canDeleteItemAtIndex:(NSInteger)index
 {
     return YES; //index % 2 == 0;
+}
+
+- (UIView *)accessoryviewViewForGMGridView:(GMGridView *)gridView{
+    UIImageView *imageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"close_x"]];
+    [imageView setFrame:CGRectMake(0, 0, 100, 100)];
+    
+    return imageView;
 }
 
 //////////////////////////////////////////////////////////////
@@ -308,6 +318,11 @@
     }
 }
 
+- (void)accessoryViewDidActivedForGMGridView:(GMGridView *)gridView{
+    NSLog(@"accessoryViewDidActived");
+    [self addMoreItem];
+}
+
 //////////////////////////////////////////////////////////////
 #pragma mark GMGridViewSortingDelegate
 //////////////////////////////////////////////////////////////
@@ -340,6 +355,9 @@
 
 - (BOOL)GMGridView:(GMGridView *)gridView shouldAllowShakingBehaviorWhenMovingCell:(GMGridViewCell *)cell atIndex:(NSInteger)index
 {
+//    if (index % 2) {
+//        return NO;
+//    }
     return YES;
 }
 
@@ -541,5 +559,6 @@
         [_optionsPopOver dismissPopoverAnimated:YES];
     }
 }
+
 
 @end

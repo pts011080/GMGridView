@@ -37,7 +37,11 @@
 @property (nonatomic, strong) NSString *reuseIdentifier;
 @property (nonatomic, getter=isHighlighted) BOOL highlighted;
 
+@property (nonatomic, assign) BOOL canEdit;
+
 /// Override to release custom data before cell is reused.
 - (void)prepareForReuse;
+
+- (id)initWithIdentifier:(NSString*)identifier;
 
 @end

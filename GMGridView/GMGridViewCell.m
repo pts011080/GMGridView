@@ -83,6 +83,14 @@
         self.deleteButton.alpha = 0;
         [self addSubview:deleteButton];
         [deleteButton addTarget:self action:@selector(actionDelete) forControlEvents:UIControlEventTouchUpInside];
+        self.canEdit = YES;
+    }
+    return self;
+}
+
+-(id)initWithIdentifier:(NSString *)identifier{
+    if (self = [self init]) {
+        self.reuseIdentifier = identifier;
     }
     return self;
 }
@@ -284,6 +292,7 @@
     self.fullSizeView = nil;
     self.editing = NO;
     self.deleteBlock = nil;
+    self.canEdit = YES;
 }
 
 - (void)shake:(BOOL)on

@@ -75,12 +75,16 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
     
     // Rotation
     BOOL _rotationActive;
+    
+    // Accessory View
+    UIView *_accessoryView;
 }
 
 @property (nonatomic, readonly) BOOL itemsSubviewsCacheIsValid;
 @property (nonatomic, strong) NSArray *itemSubviewsCache;
 @property (atomic) NSInteger firstPositionLoaded;
 @property (atomic) NSInteger lastPositionLoaded;
+
 
 - (void)commonInit;
 
@@ -264,6 +268,8 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receivedMemoryWarningNotification:) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receivedWillRotateNotification:) name:UIApplicationWillChangeStatusBarOrientationNotification object:nil];
+    
+    
 }
 
 - (void)dealloc
@@ -556,9 +562,12 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
                 
                 NSInteger position = [self.layoutStrategy itemPositionFromLocation:location];
                 
-                if (position != GMGV_INVALID_POSITION) 
-                {
-                    [self sortingMoveDidStartAtPoint:location];
+                GMGridViewCell *item = [self cellForItemAtIndex:position];
+                if (item.canEdit) {
+                    if (position != GMGV_INVALID_POSITION)
+                    {
+                        [self sortingMoveDidStartAtPoint:location];
+                    }
                 }
             }
             
@@ -706,7 +715,7 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
     NSInteger position = [self.layoutStrategy itemPositionFromLocation:point];
     
     GMGridViewCell *item = [self cellForItemAtIndex:position];
-    
+
     [self bringSubviewToFront:item];
     _sortMovingItem = item;
     
@@ -773,6 +782,13 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
 - (void)sortingMoveDidContinueToPoint:(CGPoint)point
 {
     int position = [self.layoutStrategy itemPositionFromLocation:point];
+    
+    GMGridViewCell *item = [self cellForItemAtIndex:position];
+    
+    if (!item.canEdit) {
+        return;
+    }
+    
     int tag = position + kTagOffset;
     
     if (position != GMGV_INVALID_POSITION && position != _sortFuturePosition && position < _numberTotalItems) 
@@ -1147,7 +1163,14 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
     {
         if (!self.editing) {
             [self cellForItemAtIndex:position].highlighted = NO;
-            [self.actionDelegate GMGridView:self didTapOnItemAtIndex:position];
+            
+            if (_accessoryView && position == _numberTotalItems - 1) {
+                if ([self.actionDelegate respondsToSelector:@selector(accessoryViewDidActivedForGMGridView:)]) {
+                    [self.actionDelegate accessoryViewDidActivedForGMGridView:self];
+                }
+            }else{
+                [self.actionDelegate GMGridView:self didTapOnItemAtIndex:position];
+            }
         }
     }
     else
@@ -1174,7 +1197,11 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
 
 - (GMGridViewCell *)newItemSubViewForPosition:(NSInteger)position
 {
+//    GMGridViewCell *cell = _accessoryView ? position == _numberTotalItems - 1 ? [self accessoryCell] : [self.dataSource GMGridView:self cellForItemAtIndex:position] :  [self.dataSource GMGridView:self cellForItemAtIndex:position] ;
+//    GMGridViewCell *cell = _accessoryView ? position == _numberTotalItems - 1 ? [self accessoryCell] : [self.dataSource GMGridView:self cellForItemAtIndex:position] :  [self.dataSource GMGridView:self cellForItemAtIndex:position] ;
+    
     GMGridViewCell *cell = [self.dataSource GMGridView:self cellForItemAtIndex:position];
+    
     CGPoint origin = [self.layoutStrategy originForItemAtPosition:position];
     CGRect frame = CGRectMake(origin.x, origin.y, _itemSize.width, _itemSize.height);
     
@@ -1399,7 +1426,25 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
         {
             if (![self cellForItemAtIndex:positionToLoad]) 
             {
-                GMGridViewCell *cell = [self newItemSubViewForPosition:positionToLoad];
+                GMGridViewCell *cell = nil;
+                if (_accessoryView && _numberTotalItems - 1 == positionToLoad) {
+                    cell = [self accessoryCell];
+                    
+                    CGPoint origin = [self.layoutStrategy originForItemAtPosition:positionToLoad];
+                    CGRect frame = CGRectMake(origin.x, origin.y, _itemSize.width, _itemSize.height);
+                    
+                    // To make sure the frame is not animated
+                    [self applyWithoutAnimation:^{
+                        cell.frame = frame;
+                        cell.contentView.frame = cell.bounds;
+                    }];
+                    
+                    cell.tag = positionToLoad + kTagOffset;
+                    [cell setEditing:NO animated:NO];
+                    
+                }else{
+                    cell = [self newItemSubViewForPosition:positionToLoad];
+                }
                 [self addSubview:cell];
             }
         }
@@ -1495,6 +1540,10 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
 
 - (void)reloadData
 {
+    if ([self.dataSource respondsToSelector:@selector(accessoryviewViewForGMGridView:)]) {
+        _accessoryView = [self.dataSource accessoryviewViewForGMGridView:self];
+    }
+    
     CGPoint previousContentOffset = self.contentOffset;
     
     [[self itemSubviews] enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL *stop)
@@ -1511,7 +1560,12 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
     
     [self setSubviewsCacheAsInvalid];
     
-    NSUInteger numberItems = [self.dataSource numberOfItemsInGMGridView:self];    
+    NSUInteger numberItems = [self.dataSource numberOfItemsInGMGridView:self];
+    
+    if (_accessoryView) {
+        numberItems = numberItems + 1;
+    }
+    
     _itemSize = [self.dataSource GMGridView:self sizeForItemsInInterfaceOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
     _numberTotalItems = numberItems;
     
@@ -1666,6 +1720,7 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
     }
     
     [self setSubviewsCacheAsInvalid];
+
 }
 
 - (void)removeObjectAtIndex:(NSInteger)index animated:(BOOL)animated
@@ -1764,6 +1819,21 @@ static const UIViewAnimationOptions kDefaultAnimationOptions = UIViewAnimationOp
                      completion:^(BOOL finished) {
                          [self setNeedsLayout];
                      }];
+}
+
+- (GMGridViewCell *)accessoryCell{
+    
+    GMGridViewCell *cell = [[GMGridViewCell alloc] initWithIdentifier:@"accessoryCell_a_z"];
+    
+    [_accessoryView setCenter:cell.center];
+    
+    cell.contentView = _accessoryView;
+    
+    cell.canEdit = NO;
+    
+    [[cell.contentView subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    
+    return cell;
 }
 
 
