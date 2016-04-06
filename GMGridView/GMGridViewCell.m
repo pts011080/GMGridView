@@ -193,6 +193,9 @@
 
 - (void)setEditing:(BOOL)editing animated:(BOOL)animated
 {
+    if (!self.canEdit) {
+        return;
+    }
     if (editing != _editing) {
         _editing = editing;
         if (animated) {
